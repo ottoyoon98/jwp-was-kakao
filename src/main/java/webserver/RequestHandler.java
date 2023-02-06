@@ -1,5 +1,6 @@
 package webserver;
 
+import model.FileExtensions;
 import model.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +11,10 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
-    private static final String TEMPLATES_DIR = "./templates";
 
     private final Socket connection;
 
@@ -38,34 +39,32 @@ public class RequestHandler implements Runnable {
             }
             System.out.println(response);
 
-            // TODO:
-            //  - "/test.png"도 파일임, "/a/test.jpg"도 파일임, "/a/b/test.jpg?params1=1234&params2=2345"도 파일임
-            //  - URL과 일치하는 파일 읽기
-            //  - 해당 파일을 byte로 변환하기
             URI requestURI = URI.create(response.getURI());
             String path = requestURI.getPath();
             byte[] body = "Hello world".getBytes();
+
+            DataOutputStream dos = new DataOutputStream(out);
             try {
-                body = FileIoUtils.loadFileFromClasspath(TEMPLATES_DIR + path);
+                Optional<String> ext = getExtension(path);
+                FileExtensions requestedFileExtension = FileExtensions.of(ext.orElse(""));
+                body = FileIoUtils.loadFileFromClasspath((requestedFileExtension.getDirectory()) + path);
+                response200Header(dos, requestedFileExtension.getContentType(), body.length);
             } catch (IOException e) {
 
             } catch (URISyntaxException e) {
 
             }
-
-            DataOutputStream dos = new DataOutputStream(out);
-            response200Header(dos, body.length);
             responseBody(dos, body);
-        } catch (
-                IOException e) {
+
+        } catch (IOException e) {
             logger.error(e.getMessage());
         }
     }
 
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response200Header(DataOutputStream dos, String accept, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8 \r\n");
+            dos.writeBytes("Content-Type: " + accept + " \r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + " \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
@@ -80,5 +79,12 @@ public class RequestHandler implements Runnable {
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
+    }
+
+    private Optional<String> getExtension(String path) {
+        File file = new File(path);
+        String fileName = file.getName();
+        String[] parsedFileName = fileName.split("\\.");
+        return parsedFileName.length < 1 ? Optional.empty() : Optional.of(parsedFileName[parsedFileName.length - 1]);
     }
 }
