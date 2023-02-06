@@ -1,23 +1,17 @@
 package webserver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import db.DataBase;
-import model.FileExtensions;
-import model.HttpRequest;
-import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.FileIoUtils;
+import webserver.domain.*;
+import webserver.utils.FileIoUtils;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
@@ -33,77 +27,42 @@ public class RequestHandler implements Runnable {
                 connection.getPort());
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            HttpRequest httpRequest = HttpRequest.from(in);
 
-            HttpRequest httpRequest = new HttpRequest()
-                    .setStatusLine(reader.readLine());
-
-            while (true) {
-                String line = reader.readLine();
-                if (line == null || line.isEmpty()) break;
-                httpRequest.addHeader(line);
-            }
-
-            URI requestURI = URI.create(httpRequest.getURI());
-            String path = requestURI.getPath();
+            PathResource pathResource = new PathResource(httpRequest.getURI());
             byte[] body = "Hello world".getBytes();
 
+            // TODO
+            //  URL Mapping을 통해 원하는 메소드 호출할 수 있게 만들기
             DataOutputStream dos = new DataOutputStream(out);
-
-            Optional<String> ext = getExtension(path);
-            if (ext.isEmpty()) {
-                String queryParams = requestURI.getQuery();
-                String[] parsedParams = queryParams.split("&");
-                Map<String, String> mappedParams = Arrays.stream(parsedParams)
-                        .map(item -> item.split("="))
-                        .collect(Collectors.toMap(k -> k[0], v -> v[1]));
-
-                ObjectMapper objectMapper = new ObjectMapper();
-                User user = objectMapper.convertValue(mappedParams, User.class);
-
+            if (pathResource.hasParams()) {
+                User user = pathResource.convertParams(User.class);
                 DataBase.addUser(user);
-            } else {
-                FileExtensions requestedFileExtension = FileExtensions.of(ext.get());
+                logger.info("New User Signed Up! " + user);
+            } else if (pathResource.isFile()) {
+                FileExtensions requestedFileExtension = FileExtensions.of(pathResource.getExtension());
                 try {
-                    body = FileIoUtils.loadFileFromClasspath((requestedFileExtension.getDirectory()) + path);
-                    response200Header(dos, requestedFileExtension.getContentType(), body.length);
-                } catch (IOException e) {
+                    body = FileIoUtils.loadFileFromClasspath(requestedFileExtension.getDirectory() + pathResource.getRawPath());
 
-                } catch (URISyntaxException e) {
-
+                    HttpResponse response = HttpResponse.builder(HttpStatus.OK)
+                            .contentType(requestedFileExtension.getContentType())
+                            .contentLength(body.length)
+                            .body(body)
+                            .build();
+                    dos.write(response.getAsByte());
+                } catch (IOException | URISyntaxException e) {
+                    logger.error(e.getMessage());
                 }
+            } else {
+                HttpResponse response = HttpResponse.builder(HttpStatus.OK)
+                        .contentLength(body.length)
+                        .body(body)
+                        .build();
+                dos.write(response.getAsByte());
             }
-            responseBody(dos, body);
 
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             logger.error(e.getMessage());
         }
-    }
-
-    private void response200Header(DataOutputStream dos, String accept, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: " + accept + " \r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + " \r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-    }
-
-    private void responseBody(DataOutputStream dos, byte[] body) {
-        try {
-            dos.write(body, 0, body.length);
-            dos.flush();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-    }
-
-    private Optional<String> getExtension(String path) {
-        File file = new File(path);
-        String fileName = file.getName();
-        String[] parsedFileName = fileName.split("\\.");
-        return parsedFileName.length <= 1 ? Optional.empty() : Optional.of(parsedFileName[parsedFileName.length - 1]);
     }
 }

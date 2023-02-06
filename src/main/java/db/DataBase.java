@@ -1,6 +1,6 @@
 package db;
 
-import model.User;
+import webserver.domain.User;
 
 import java.util.Collection;
 import java.util.HashMap;
