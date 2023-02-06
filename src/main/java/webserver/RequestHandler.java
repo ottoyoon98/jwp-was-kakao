@@ -1,7 +1,10 @@
 package webserver;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import db.DataBase;
 import model.FileExtensions;
-import model.Response;
+import model.HttpRequest;
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.FileIoUtils;
@@ -11,7 +14,10 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
@@ -29,30 +35,43 @@ public class RequestHandler implements Runnable {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
 
-            Response response = new Response()
+            HttpRequest httpRequest = new HttpRequest()
                     .setStatusLine(reader.readLine());
 
             while (true) {
                 String line = reader.readLine();
                 if (line == null || line.isEmpty()) break;
-                response.addHeader(line);
+                httpRequest.addHeader(line);
             }
-            System.out.println(response);
 
-            URI requestURI = URI.create(response.getURI());
+            URI requestURI = URI.create(httpRequest.getURI());
             String path = requestURI.getPath();
             byte[] body = "Hello world".getBytes();
 
             DataOutputStream dos = new DataOutputStream(out);
-            try {
-                Optional<String> ext = getExtension(path);
-                FileExtensions requestedFileExtension = FileExtensions.of(ext.orElse(""));
-                body = FileIoUtils.loadFileFromClasspath((requestedFileExtension.getDirectory()) + path);
-                response200Header(dos, requestedFileExtension.getContentType(), body.length);
-            } catch (IOException e) {
 
-            } catch (URISyntaxException e) {
+            Optional<String> ext = getExtension(path);
+            if (ext.isEmpty()) {
+                String queryParams = requestURI.getQuery();
+                String[] parsedParams = queryParams.split("&");
+                Map<String, String> mappedParams = Arrays.stream(parsedParams)
+                        .map(item -> item.split("="))
+                        .collect(Collectors.toMap(k -> k[0], v -> v[1]));
 
+                ObjectMapper objectMapper = new ObjectMapper();
+                User user = objectMapper.convertValue(mappedParams, User.class);
+
+                DataBase.addUser(user);
+            } else {
+                FileExtensions requestedFileExtension = FileExtensions.of(ext.get());
+                try {
+                    body = FileIoUtils.loadFileFromClasspath((requestedFileExtension.getDirectory()) + path);
+                    response200Header(dos, requestedFileExtension.getContentType(), body.length);
+                } catch (IOException e) {
+
+                } catch (URISyntaxException e) {
+
+                }
             }
             responseBody(dos, body);
 
@@ -85,6 +104,6 @@ public class RequestHandler implements Runnable {
         File file = new File(path);
         String fileName = file.getName();
         String[] parsedFileName = fileName.split("\\.");
-        return parsedFileName.length < 1 ? Optional.empty() : Optional.of(parsedFileName[parsedFileName.length - 1]);
+        return parsedFileName.length <= 1 ? Optional.empty() : Optional.of(parsedFileName[parsedFileName.length - 1]);
     }
 }

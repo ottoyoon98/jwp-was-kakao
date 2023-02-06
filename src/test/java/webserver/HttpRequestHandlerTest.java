@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class RequestHandlerTest {
+class HttpRequestHandlerTest {
     @Test
     void socket_out() {
         // given

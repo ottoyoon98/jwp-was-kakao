@@ -1,7 +1,6 @@
 package model;
 
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -11,12 +10,11 @@ import java.util.Optional;
 
 @ToString
 @NoArgsConstructor
-public class Response {
+public class HttpRequest {
     private StatusLine statusLine;
     private final Headers headers = new Headers();
 
     @ToString
-    @Getter
     @Builder
     private static class StatusLine {
         private final String method;
@@ -25,7 +23,6 @@ public class Response {
     }
 
     @ToString
-    @Getter
     private static class Headers {
         private final Map<String, String> headers = new HashMap<>();
 
@@ -38,7 +35,7 @@ public class Response {
         }
     }
 
-    public Response setStatusLine(final String statusLine) {
+    public HttpRequest setStatusLine(final String statusLine) {
         String[] temp = statusLine.split(" ");
         this.statusLine = StatusLine.builder()
                 .method(temp[0])
@@ -48,21 +45,29 @@ public class Response {
         return this;
     }
 
-    public Response addHeader(final String header) {
+    public String getMethod() {
+        return this.statusLine.method;
+    }
+
+    public String getURI() {
+        return this.statusLine.path;
+    }
+
+    public String getVersion() {
+        return this.statusLine.protocolVersion;
+    }
+
+    public HttpRequest addHeader(final String header) {
         String[] temp = header.split(": ");
         return putHeader(temp[0], temp[1]);
     }
 
-    public Response putHeader(final String key, final String value) {
+    public HttpRequest putHeader(final String key, final String value) {
         headers.put(key, value);
         return this;
     }
 
     public Optional<String> getHeader(final String key) {
         return Optional.ofNullable(headers.get(key));
-    }
-
-    public String getURI() {
-        return this.statusLine.path;
     }
 }
