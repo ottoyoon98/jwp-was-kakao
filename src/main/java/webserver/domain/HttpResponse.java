@@ -93,10 +93,10 @@ public class HttpResponse {
 
     public static class HttpResponseBuilder {
         private final HttpStatus status;
+        private final Map<String, String> customHeaders = new TreeMap<>();
         private String contentType = null;
         private long contentLength;
         private String location = null;
-        private final Map<String, String> customHeaders = new TreeMap<>();
         private byte[] body;
 
         public HttpResponseBuilder(HttpStatus status) {
