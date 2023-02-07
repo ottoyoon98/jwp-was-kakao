@@ -1,4 +1,4 @@
-package model;
+package webserver.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,9 +31,6 @@ public enum FileExtensions {
     DEFAULT(null, "text/plain"),
     ;
 
-    private final FileDirectory directory;
-    private final String contentType;
-
     private static final Map<String, FileExtensions> enumMapper = new HashMap<>();
 
     static {
@@ -41,11 +38,14 @@ public enum FileExtensions {
                 .forEach(item -> enumMapper.putIfAbsent(item.toString(), item));
     }
 
-    public String getDirectory() {
-        return directory.getDirectory();
-    }
+    private final FileDirectory directory;
+    private final String contentType;
 
     public static FileExtensions of(String fileExtension) {
         return enumMapper.getOrDefault(fileExtension.toUpperCase(), FileExtensions.DEFAULT);
+    }
+
+    public String getDirectory() {
+        return directory.getDirectory();
     }
 }
