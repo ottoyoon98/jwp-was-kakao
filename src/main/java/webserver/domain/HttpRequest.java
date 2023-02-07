@@ -2,6 +2,7 @@ package webserver.domain;
 
 import lombok.Builder;
 import lombok.ToString;
+import webserver.utils.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,18 +17,22 @@ import java.util.Optional;
 public class HttpRequest {
     private final Headers headers = new Headers();
     private StatusLine statusLine;
+    private String body;
 
     public static HttpRequest from(InputStream inputStream) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
         HttpRequest httpRequest = new HttpRequest();
-        httpRequest.setStatusLine(reader.readLine());
 
+        String line = reader.readLine();
+        httpRequest.setStatusLine(line);
         while (true) {
-            String line = reader.readLine();
+            line = reader.readLine();
             if (line == null || line.isEmpty()) break;
             httpRequest.addHeader(line);
         }
+        line = IOUtils.readData(reader, httpRequest.getHeader("Content-Length").map(Integer::parseInt).orElse(0));
+        httpRequest.setBody(line);
 
         return httpRequest;
     }
@@ -35,8 +40,8 @@ public class HttpRequest {
     private void setStatusLine(final String statusLine) {
         String[] parsedStatusLine = statusLine.split(" ");
         this.statusLine = StatusLine.builder()
-                .method(parsedStatusLine[0])
-                .path(parsedStatusLine[1])
+                .method(HttpMethod.of(parsedStatusLine[0]))
+                .uri(parsedStatusLine[1])
                 .protocolVersion(parsedStatusLine[2])
                 .build();
     }
@@ -46,12 +51,24 @@ public class HttpRequest {
         headers.put(parsedHeader[0], parsedHeader[1]);
     }
 
-    public String getMethod() {
+    public String getBody() {
+        return body;
+    }
+
+    private void setBody(final String body) {
+        this.body = body;
+    }
+
+    public HttpMethod getMethod() {
         return this.statusLine.method;
     }
 
     public String getURI() {
-        return this.statusLine.path;
+        return this.statusLine.uri;
+    }
+
+    public String getPath() {
+        return this.statusLine.uri.split("\\?")[0];
     }
 
     public String getVersion() {
@@ -65,8 +82,8 @@ public class HttpRequest {
     @ToString
     @Builder
     private static class StatusLine {
-        private final String method;
-        private final String path;
+        private final HttpMethod method;
+        private final String uri;
         private final String protocolVersion;
     }
 

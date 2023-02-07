@@ -1,4 +1,4 @@
-package webserver.domain;
+package webapplication.domain;
 
 import lombok.*;
 

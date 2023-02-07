@@ -7,7 +7,7 @@ import com.github.jknack.handlebars.io.TemplateLoader;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import webserver.domain.User;
+import webapplication.domain.User;
 
 public class HandlebarsTest {
     private static final Logger log = LoggerFactory.getLogger(HandlebarsTest.class);
