@@ -1,4 +1,4 @@
-package model;
+package webserver.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
