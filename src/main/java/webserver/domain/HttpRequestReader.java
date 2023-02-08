@@ -40,15 +40,13 @@ public class HttpRequestReader {
     private Map<String, String> parseQueryParams() {
         return Optional.ofNullable(uri.getQuery())
                 .map(this::parseQuery)
-                .orElse(new HashMap<>())
-                ;
+                .orElse(new HashMap<>());
     }
 
     private Map<String, String> parseQuery(String query) {
         return Arrays.stream(query.split("&"))
                 .map(item -> item.split("="))
-                .collect(Collectors.toMap(k -> k[0], v -> v[1]))
-                ;
+                .collect(Collectors.toMap(k -> k[0], v -> v[1]));
     }
 
     public boolean hasParams() {

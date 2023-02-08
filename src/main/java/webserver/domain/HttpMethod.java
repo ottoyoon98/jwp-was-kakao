@@ -26,6 +26,7 @@ public enum HttpMethod {
     }
 
     public static HttpMethod of(String method) {
-        return Optional.ofNullable(enumMapper.get(method)).orElseThrow(IllegalArgumentException::new);
+        return Optional.ofNullable(enumMapper.get(method))
+                .orElseThrow(IllegalArgumentException::new);
     }
 }

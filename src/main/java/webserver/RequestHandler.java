@@ -54,7 +54,8 @@ public class RequestHandler implements Runnable {
                 }
             } else if (routingHandler.canHandle(httpRequest.getMethod(), httpRequest.getPath())) {
                 Context context = new Context(requestReader);
-                routingHandler.getHandler(httpRequest.getMethod(), httpRequest.getPath()).accept(context);
+                routingHandler.getHandler(httpRequest.getMethod(), httpRequest.getPath())
+                        .accept(context);
                 response = context.getHttpResponse();
             }
 

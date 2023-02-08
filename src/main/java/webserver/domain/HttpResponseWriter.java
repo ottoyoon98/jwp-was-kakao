@@ -38,7 +38,9 @@ public class HttpResponseWriter {
 
     private byte[] write() {
         stringJoiner
-                .add("HTTP/1.1 " + this.httpResponse.getStatus().getValue() + " " + this.httpResponse.getStatus().getReasonPhrase())
+                .add("HTTP/1.1 " + this.httpResponse.getStatus()
+                        .getValue() + " " + this.httpResponse.getStatus()
+                        .getReasonPhrase())
                 .add("Content-Length: " + this.httpResponse.getContentLength())
         ;
         if (this.httpResponse.getContentType() != null) {
@@ -47,8 +49,10 @@ public class HttpResponseWriter {
         if (this.httpResponse.getLocation() != null) {
             stringJoiner.add("Location: " + this.httpResponse.getLocation());
         }
-        this.httpResponse.getCustomHeaders().forEach((k, v) -> stringJoiner.add(k + ": " + v));
-        stringJoiner.add("").add("");
+        this.httpResponse.getCustomHeaders()
+                .forEach((k, v) -> stringJoiner.add(k + ": " + v));
+        stringJoiner.add("")
+                .add("");
 
         String responseHeaders = stringJoiner.toString();
 

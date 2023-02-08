@@ -31,7 +31,9 @@ public class HttpRequest {
             if (line == null || line.isEmpty()) break;
             httpRequest.addHeader(line);
         }
-        line = IOUtils.readData(reader, httpRequest.getHeader("Content-Length").map(Integer::parseInt).orElse(0));
+        line = IOUtils.readData(reader, httpRequest.getHeader("Content-Length")
+                .map(Integer::parseInt)
+                .orElse(0));
         httpRequest.setBody(line);
 
         return httpRequest;
