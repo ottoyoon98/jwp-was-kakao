@@ -26,45 +26,68 @@ public class RequestHandler implements Runnable {
 
     public void run() {
         logger.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(), connection.getPort());
-
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest httpRequest = HttpRequest.from(in);
-            HttpRequestReader requestReader = new HttpRequestReader(httpRequest);
-
-            byte[] body = "Hello world".getBytes();
-
-            DataOutputStream dos = new DataOutputStream(out);
-            HttpResponse response = HttpResponse.builder(HttpStatus.OK)
-                    .contentLength(body.length)
-                    .body(body)
-                    .build();
-
-            if (requestReader.isFile()) {
-                FileExtensions requestedFileExtension = FileExtensions.of(requestReader.getExtension());
-                try {
-                    body = FileIoUtils.loadFileFromClasspath(requestedFileExtension.getDirectory() + requestReader.getPath());
-                    response = HttpResponse.builder(HttpStatus.OK)
-                            .contentType(requestedFileExtension.getContentType())
-                            .contentLength(body.length)
-                            .body(body)
-                            .build();
-                } catch (IOException | URISyntaxException e) {
-                    logger.error(e.getMessage());
-                    logger.error(Arrays.toString(e.getStackTrace()));
-                }
-            } else if (routingHandler.canHandle(httpRequest.getMethod(), httpRequest.getPath())) {
-                Context context = new Context(requestReader);
-                routingHandler.getHandler(httpRequest.getMethod(), httpRequest.getPath())
-                        .accept(context);
-                response = context.getHttpResponse();
-            }
-
-            HttpResponseWriter writer = new HttpResponseWriter(response);
-            dos.write(writer.writeAsByte());
-
+            HttpResponse httpResponse = generateResponse(httpRequest);
+            writeResponse(out, httpResponse);
         } catch (IOException | NullPointerException e) {
             logger.error(e.getMessage());
             logger.error(Arrays.toString(e.getStackTrace()));
         }
     }
+
+    private HttpResponse generateResponse(HttpRequest httpRequest) {
+        HttpRequestReader requestReader = new HttpRequestReader(httpRequest);
+        byte[] body = "Hello world".getBytes();
+        HttpResponse response = HttpResponse.builder(HttpStatus.OK)
+                .contentLength(body.length)
+                .body(body)
+                .build();
+
+        if (requestReader.isFile()) {
+            response = getHttpResponseByFile(requestReader);
+        } else if (routingHandler.canHandle(httpRequest.getMethod(), httpRequest.getPath())) {
+            response = getHttpResponseByHandler(requestReader, httpRequest);
+        }
+        return response;
+    }
+
+    private HttpResponse getHttpResponseByFile(HttpRequestReader requestReader) {
+        FileExtensions requestedFileExtension = FileExtensions.of(requestReader.getExtension());
+        byte[] body;
+        HttpResponse response;
+        try {
+            body = FileIoUtils.loadFileFromClasspath(requestedFileExtension.getDirectory() + requestReader.getPath());
+            response = HttpResponse.builder(HttpStatus.OK)
+                    .contentType(requestedFileExtension.getContentType())
+                    .contentLength(body.length)
+                    .body(body)
+                    .build();
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+            logger.error(Arrays.toString(e.getStackTrace()));
+            response = HttpResponse.builder(HttpStatus.NOT_FOUND)
+                    .build();
+        } catch (URISyntaxException e) {
+            logger.error(e.getMessage());
+            logger.error(Arrays.toString(e.getStackTrace()));
+            response = HttpResponse.builder(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+        return response;
+    }
+
+    private HttpResponse getHttpResponseByHandler(HttpRequestReader requestReader, HttpRequest httpRequest) {
+        Context context = new Context(requestReader);
+        routingHandler.getHandler(httpRequest.getMethod(), httpRequest.getPath())
+                .accept(context);
+        return context.getHttpResponse();
+    }
+
+    private void writeResponse(OutputStream out, HttpResponse response) throws IOException {
+        DataOutputStream dos = new DataOutputStream(out);
+        HttpResponseWriter writer = new HttpResponseWriter(response);
+        dos.write(writer.writeAsByte());
+    }
+
 }

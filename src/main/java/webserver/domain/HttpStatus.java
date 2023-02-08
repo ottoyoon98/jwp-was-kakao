@@ -31,7 +31,9 @@ public enum HttpStatus {
     PROXY_AUTHENTICATION_REQUIRED(407, "Proxy Authentication Required"),
     REQUEST_TIMEOUT(408, "Request Timeout"),
     CONFLICT(409, "Conflict"),
-    ;
+
+    // 5xx
+    INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 
     private final int value;
 
