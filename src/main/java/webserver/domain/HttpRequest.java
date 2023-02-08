@@ -28,7 +28,9 @@ public class HttpRequest {
         httpRequest.setStatusLine(line);
         while (true) {
             line = reader.readLine();
-            if (line == null || line.isEmpty()) break;
+            if (line.isEmpty()) {
+                break;
+            }
             httpRequest.addHeader(line);
         }
         line = IOUtils.readData(reader, httpRequest.getHeader("Content-Length")
