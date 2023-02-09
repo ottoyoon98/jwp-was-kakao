@@ -9,7 +9,7 @@ public class WebServer {
         try (WebServerContext webServerContext = new WebServerContext()) {
             webServerContext.GET("/user/create", UserController.getInstance()::createUserByGet);
             webServerContext.POST("/user/create", UserController.getInstance()::createUserByPost);
-
+            webServerContext.POST("/user/login", UserController.getInstance()::authUserByPost);
             webServerContext.start();
         }
     }

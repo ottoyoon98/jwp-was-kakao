@@ -79,6 +79,7 @@ public class RequestHandler implements Runnable {
         return response;
     }
 
+
     private HttpResponse getHttpResponseByHandler(HttpRequestReader requestReader, HttpRequest httpRequest) {
         Context context = new Context(requestReader);
         routingHandler.getHandler(httpRequest.getMethod(), httpRequest.getPath())
