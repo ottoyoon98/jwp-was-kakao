@@ -69,8 +69,17 @@ public class HttpResponse {
             return this;
         }
 
+        public HttpResponseBuilder cookie(String sessionId) {
+            System.out.println(sessionId);
+            if (sessionId == null) { // isEmpty, isBlank 쓰면 에러 발생.
+                this.customHeaders.put("Set-Cookie", (new HttpCookie().getCookie("JSESSIONID")));
+            }
+            return this;
+        }
+
         public HttpResponse build() {
             return new HttpResponse(this);
         }
+
     }
 }

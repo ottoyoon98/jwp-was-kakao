@@ -61,6 +61,8 @@ public class RequestHandler implements Runnable {
             response = HttpResponse.builder(HttpStatus.OK)
                     .contentType(requestedFileExtension.getContentType())
                     .contentLength(body.length)
+                    .cookie(requestReader.getHttpCookie()
+                            .getCookie("JSESSIONID"))
                     .body(body)
                     .build();
         } catch (IOException e) {

@@ -21,6 +21,7 @@ public class HttpRequestReader {
 
     private final String path;
     private final String extension;
+    private final HttpCookie HttpCookie;
 
     public HttpRequestReader(HttpRequest httpRequest) {
         this.httpRequest = httpRequest;
@@ -29,6 +30,12 @@ public class HttpRequestReader {
         this.queryParams = parseQueryParams();
         this.path = uri.getPath();
         this.extension = parseExtension();
+        this.HttpCookie = parseCookie();
+    }
+
+    private HttpCookie parseCookie() {
+        return new HttpCookie(httpRequest.getHeader("Cookie")
+                .orElse(""));
     }
 
     private String parseExtension() {
@@ -67,6 +74,10 @@ public class HttpRequestReader {
 
     public String getPath() {
         return path;
+    }
+
+    public HttpCookie getHttpCookie() {
+        return HttpCookie;
     }
 
     public <T> T bindBody(Class<T> clazz) {
