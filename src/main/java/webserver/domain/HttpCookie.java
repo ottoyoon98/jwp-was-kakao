@@ -1,9 +1,6 @@
 package webserver.domain;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class HttpCookie {
     private final Map<String, String> cookies = new HashMap<>();
@@ -23,7 +20,7 @@ public class HttpCookie {
                 });
     }
 
-    public String getCookie(String key) {
-        return cookies.get(key);
+    public Optional<String> getCookie(String key) {
+        return Optional.ofNullable(cookies.get(key));
     }
 }

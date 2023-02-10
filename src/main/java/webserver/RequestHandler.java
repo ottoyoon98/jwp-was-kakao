@@ -62,7 +62,8 @@ public class RequestHandler implements Runnable {
                     .contentType(requestedFileExtension.getContentType())
                     .contentLength(body.length)
                     .cookie(requestReader.getHttpCookie()
-                            .getCookie("JSESSIONID"))
+                            .getCookie("JSESSIONID")
+                            .orElse(""))
                     .body(body)
                     .build();
         } catch (IOException e) {

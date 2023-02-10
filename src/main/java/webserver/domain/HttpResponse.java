@@ -71,8 +71,9 @@ public class HttpResponse {
 
         public HttpResponseBuilder cookie(String sessionId) {
             System.out.println(sessionId);
-            if (sessionId == null) { // isEmpty, isBlank 쓰면 에러 발생.
-                this.customHeaders.put("Set-Cookie", (new HttpCookie().getCookie("JSESSIONID")));
+            if (sessionId.isBlank()) {
+                this.customHeaders.put("Set-Cookie", (new HttpCookie().getCookie("JSESSIONID")
+                        .orElse("")));
             }
             return this;
         }
