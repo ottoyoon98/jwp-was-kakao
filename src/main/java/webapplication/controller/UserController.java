@@ -66,7 +66,7 @@ public class UserController {
                 c.setHttpResponse(HttpResponse.builder(HttpStatus.OK)
                         .build());
             } catch (Exception e) {
-
+                System.out.println(e.getMessage());
             }
         } else {
             c.setHttpResponse(HttpResponse.builder(HttpStatus.FOUND)
