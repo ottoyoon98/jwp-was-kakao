@@ -59,6 +59,30 @@ public class UserController {
 
     }
 
+    public void getUserListByGet(Context c) {
+        if (isLogined(c)) {
+            try {
+                String userListPage = mainService.getUserList();
+                c.setHttpResponse(HttpResponse.builder(HttpStatus.OK)
+                        .build());
+            } catch (Exception e) {
+
+            }
+        } else {
+            c.setHttpResponse(HttpResponse.builder(HttpStatus.FOUND)
+                    .location("/user/login.html")
+                    .build());
+        }
+    }
+
+    private static boolean isLogined(Context c) {
+        return c.getRequestReader()
+                .getHttpCookie()
+                .getCookie("logined")
+                .orElse("")
+                .equals("true");
+    }
+
     private static class UserControllerHolder {
         private static final UserController INSTANCE = new UserController(new MainServiceImpl());
     }

@@ -10,6 +10,7 @@ public class WebServer {
             webServerContext.GET("/user/create", UserController.getInstance()::createUserByGet);
             webServerContext.POST("/user/create", UserController.getInstance()::createUserByPost);
             webServerContext.POST("/user/login", UserController.getInstance()::authUserByPost);
+            webServerContext.GET("/user/list", UserController.getInstance()::getUserListByGet);
             webServerContext.start();
         }
     }

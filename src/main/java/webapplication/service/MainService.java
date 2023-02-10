@@ -8,4 +8,6 @@ public interface MainService {
 
     boolean isCheckUserByIdAndPassword(Login login);
 
+    String getUserList() throws Exception;
+
 }
